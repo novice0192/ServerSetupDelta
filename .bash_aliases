@@ -1,13 +1,3 @@
-# make user in a specified group
-# set password and home dir
-# 2 files in home
-# headers
-# chmod -R 700 /home/" $1 "; setfacl -R -m u:" $1 ":rwx /home/" $1 ";"
-# | "/bin/bash"
-# sudo useradd -m -d /home/OmegaCEO OmegaCEO;
-# sudo chmod -R 700 /home/OmegaCEO;
-# | "/bin/bash"
-
 alias genUser='
 useracc=$1
 cut -f 2 -d " " $useracc | sort -fi | uniq | awk '\''{print("sudo groupadd " $1 "; sudo useradd -m -d /home/" $1 " -g " $1 " -s /bin/bash " $1 "; sudo passwd " $1 " < defpass.txt") | "/bin/bash"}'\'';
