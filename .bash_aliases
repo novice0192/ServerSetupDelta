@@ -1,5 +1,6 @@
 alias genUser='
-useracc=$1
+echo "Enter filename to obtain user details"
+read useracc
 cut -f 2 -d " " $useracc | sort -fi | uniq | awk '\''{print("sudo groupadd " $1 "; sudo useradd -m -d /home/" $1 " -g " $1 " -s /bin/bash " $1 "; sudo passwd " $1 " < defpass.txt") | "/bin/bash"}'\'';
 awk '\''{print("sudo useradd -m -d /home/" $1 " -g " $2 " -s /bin/bash -c \"" $3 "|" $4 "|" $5 "\" " $1 "; sudo passwd " $1 " < defpass.txt; sudo cp Curr_Bal.txt /home/" $1 "/Current_Balance.txt; sudo chown " $1 ":" $2 " /home/" $1 "/Current_Balance.txt; sudo cp Trans_hist_user.txt /home/" $1 "/Transaction_History.txt; sudo chown " $1 ":" $2 " /home/" $1 "/Transaction_History.txt; ") | "/bin/bash"}'\'' $useracc;'
 
@@ -69,6 +70,94 @@ else
 	echo "Invalid option";
 fi;'
 
+alias genSummary='
+echo "Enter filename to obtain data or leave blank to take existing data"
+read tran_file
+if [[ $tran_file != *.txt ]];
+then
+	tran_file=Branch_Transaction_History.txt
+fi
+tail -n +2 $tran_file | sort -nrt " " -k3,3d -k2,2Vd | tac > sort_tran.txt
+sed -i -e "s/+//" sort_tran.txt
+echo "Transactions by highest value each month:" >> Summary.txt
+echo "" >> Summary.txt
+val=""
+yr_mn=0
+while read -r line; do
+	dtecmp=$(echo $line | cut -f 3 -d " " | cut -f 1,2 -d "-")
+	if [[ $yr_mn != $dtecmp ]];
+	then
+		yr_mn=$dtecmp
+		echo $line >> Summary.txt
+		val=$line
+	fi
+	if [[ $val != "_._" ]];
+	then
+		prod=$(echo "$(echo $val | cut -f2 -d\ ) * $(echo $line | cut -f2 -d\ )" | bc -l)
+		if [[ $(echo "$prod < 0" | bc -l) -eq 1 ]];
+		then
+			echo $line >> Summary.txt
+			echo "" >> Summary.txt
+			val="_._"
+		fi
+	fi
+done < sort_tran.txt
+exp=0
+c=0
+yr_mn=0
 
+while read -r line; do
+	dtecmp=$(echo $line | cut -f 3 -d " " | cut -f 1,2 -d "-")
+	val=$(echo $line | cut -f 2 -d " ")
+	if [[ $yr_mn == $dtecmp ]];
+	then
+		if [[ $(echo "$val < 0" | bc -l) -eq 1 ]];
+		then
+			c=$((c+1))
+			exp=$(echo "$exp + $val" | bc -l)
+		fi
+	else
+		if [[ $c -gt 0 ]];
+		then
+			echo mean of expenditure for $yr_mn = $(echo "$exp / $c" | bc -l) >> Summary.txt
+			
+			if [[ $c%2 -eq 1 ]];
+			then
+				med=$(grep $yr_mn sort_tran.txt | cut -f 2 -d " " | grep "-" | head -n $(((c+1)/2)) | tail -n 1)
+			else
+				med=$(echo "$(grep $yr_mn sort_tran.txt | cut -f 2 -d\ | grep - | head -n $((c+1)) | tail -n 2 | paste -sd+ | bc -l) / 2" | bc -l)
+			fi
+			echo "median of expenditure for $yr_mn = $med" >> Summary.txt
+			
+			grep $yr_mn sort_tran.txt | cut -f 2 -d " " | grep "-" | uniq -c | cut -f 7,8 -d " " | sort -nr -k1 > mode_list.txt
+			printf "mode of expenditure for $yr_mn is:" >> Summary.txt
+			echo $(head -n 1 mode_list.txt | cut -f2 -d " ") >> Summary.txt
+			
+			echo "" >> Summary.txt
+		fi
+		yr_mn=$dtecmp
+		c=1
+		exp=$val
+	fi
+done < sort_tran.txt
+
+if [[ $c -gt 0 ]];
+then
+	echo mean of expenditure for $yr_mn = $(echo "$exp / $c" | bc -l) >> Summary.txt
+	
+	if [[ $c%2 -eq 1 ]];
+	then
+		med=$(grep $yr_mn sort_tran.txt | cut -f 2 -d " " | grep "-" | head -n $(((c+1)/2)) | tail -n 1)
+	else
+		med=$(echo "$(grep $yr_mn sort_tran.txt | cut -f 2 -d\ | grep - | head -n $((c+1)) | tail -n 2 | paste -sd+ | bc -l) / 2" | bc -l)
+	fi
+	echo median of expenditure for $yr_mn = $med >> Summary.txt
+	
+	grep $yr_mn sort_tran.txt | cut -f 2 -d " " | grep "-" | uniq -c | cut -f 7,8 -d " " | sort -nr -k1 > mode_list.txt
+	printf "mode of expenditure for $yr_mn is:" >> Summary.txt
+	echo $(head -n 1 mode_list.txt | cut -f2 -d " ") >> Summary.txt
+	
+	echo "check Summary.txt for generated branch summary"
+fi'
 
 
