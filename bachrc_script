@@ -3,3 +3,5 @@
 echo "if [ -f ~/.bash_aliases ]; then" >> ~/.bashrc
 echo "    . ~/.bash_aliases" >> ~/.bashrc
 echo "fi" >> ~/.bashrc
+
+source ~/.bashrc
