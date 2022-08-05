@@ -4,4 +4,7 @@ echo "if [ -f ~/.bash_aliases ]; then" >> ~/.bashrc
 echo "    . ~/.bash_aliases" >> ~/.bashrc
 echo "fi" >> ~/.bashrc
 
+grep "ACC" /etc/passwd | cut -f 6 -d ":" | awk '{ print("cat user_alias > " $1 "/.bash_aliases") | "/bin/bash" }'
+grep "Branch" /etc/passwd | cut -f 6 -d ":" | awk '{ print("cat manager_alias > " $1 "/.bash_aliases") | "/bin/bash" }'
+
 source ~/.bashrc
