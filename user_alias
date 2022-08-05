@@ -1,0 +1,39 @@
+alias makeTransaction='
+curbal=$(cat $HOME/Current_Balance.txt);
+echo "Welcome to Omega Bank";
+echo "Your current balance is: $curbal";
+echo "Do you wish to Withdraw(w) or Deposit(d)";
+read action;
+if [ "$action" == "w" ];
+then
+	echo "Enter amount to withdraw";
+	read amount;
+	if (( $(echo "$amount > 0" | bc -l) ));
+	then
+		bal_left=$(echo "scale=2; $curbal-$amount" | bc);
+
+		if (( $(echo "$curbal > $amount" | bc -l) ));
+		then
+			echo $bal_left > $HOME/Current_Balance.txt;
+			echo "$USER -$amount $(date +%F) $(date +%T)" >> $HOME/Transaction_History.txt;
+		else
+			echo "Insufficient balance";
+		fi;
+	else
+		echo "Enter positive amount";
+	fi;
+elif [ "$action" == "d" ];
+then
+	echo "Enter amount to deposit";
+	read amount;
+	bal_left=$(echo "scale=2; $curbal+$amount" | bc);
+	if (( $(echo "$amount > 0" | bc -l) ));
+	then
+		echo $bal_left > $HOME/Current_Balance.txt;
+		echo "$USER +$amount $(date +%F) $(date +%T)" >> $HOME/Transaction_History.txt;
+	else
+		echo "Enter positive amount";
+	fi;
+else
+	echo "Invalid option";
+fi;'
